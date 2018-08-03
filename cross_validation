@@ -1,0 +1,272 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jul 31 13:39:40 2018
+
+@author: zh
+"""
+
+'''
+n_splits：表示划分几等份
+
+shuffle：在每次划分时，是否进行洗牌
+
+①若为Falses时，其效果等同于random_state等于整数，每次划分的结果相同（所以KFOLD等方法是无放回因为默认）
+
+②若为True时，每次划分的结果都不一样，表示经过洗牌，随机取样的
+
+random_state：随机种子数
+
+属性：
+
+①get_n_splits(X=None, y=None, groups=None)：获取参数n_splits的值
+
+②split(X, y=None, groups=None)：将数据集划分成训练集和测试集，返回索引生成器
+
+通过一个不能均等划分的栗子，设置不同参数值，观察其结果
+
+①设置shuffle=False，运行两次，发现两次结果相同
+
+frome sklearn.model_selecction import 
+1.train_test_split(X,目标变量y，test_size=：如果是浮点数，在0-1之间，表示样本占比；
+如果是整数的话就是样本的数量，train_size，shuffle=是否在拆分之前对数据进行洗牌，random_state=0）
+    1仅仅是划分数据集，且是整个数据集按比例划分，可以打乱划分也可以不打乱，即无放回，
+并且y也是划分，y是其他的输入）
+# random_state：设置随机种子的，为了每次迭代都有相同的训练集顺序（如果有的话）
+
+2.cross_val_score返回的是评测效果
+ sklearn.model_selection.cross_val_score(estimator, X, y=None, groups=None, scoring=None, cv=None）
+  
+   其中，score 默认是以 scoring=’f1_macro’进行评测的这需要from　sklearn import metrics 
+,通过在cross_val_score 指定参数来设定评测标准； 当cv 指定为int 类型时，默认使用KFold 
+或StratifiedKFold 进行数据集打乱。
+   
+  estimator 拟合数据的学习器（必须有fit方法可以没有transform方法）
+  y目标变量
+  cv迭代次数（当cv 指定为int 类型时，默认使用KFold 或StratifiedKFold 进行数据集划分）
+  当然也可以通过指定cv而不用默认的）
+      
+    例如cv=ShuffleSplit(n_splits=3, test_size=.3, random_state=0)#随机打乱最好加上
+random_state=0，不然系统默认为时间，下次随机抽取会不一样）
+ 
+
+
+  在cross_val_score 中同样可使用pipeline 进行流水线操作
+  我们要用 Pipeline 对训练集和测试集进行如下操作：
+
+  先用 StandardScaler 对数据集每一列做标准化处理，（是 transformer）
+再用 PCA 将原始的 30 维度特征压缩的 2 维度，（是 transformer）
+最后再用模型 LogisticRegression。（是 Estimator）
+调用 Pipeline 时，输入由元组构成的列表，每个元组第一个值为变量名，元组第二个元素是 
+sklearn 中的 transformer 或 Estimator。
+  
+   注意中间每一步是 transformer，即它们必须包含 fit 和 transform 方法，或者 fit_transform。 
+最后一步是一个 Estimator，即最后一步模型要有 fit 方法，可以没有 transform 方法。
+   
+  然后用 Pipeline.fit对训练集进行训练，pipe_lr.fit(X_train, y_train) #sklearn机器学习库
+再直接用 Pipeline.score 对测试集进行预测并评分 pipe_lr.score(X_test, y_test)
+   from sklearn.prepocessing import StandardScaler
+   from sklearn.decompositon import PCA  #decomposition分解
+   frome sklearn.linear_model import LogisiticRegression
+
+   from sklearn.pipeline import Pipeline
+   #构建Pipeline
+   pipe_lr=Pipeline([('sc',StandardScaler()),
+                     ('pca',PCA(n_components=2)),
+                     ('clf',LogisticRegression(random_state=1))])
+    pipe_lr.fit(X_train,y_train)#拟合数据训练数据
+    print('测试准确性：%.3f'%pipe_lr.score(X_test,y_test))#预测数据并评测F1
+   
+make_pipeline函数是Pipeline类的简单实现，只需传入每个step的类实例即可，不需自己命名，
+自动将类的小写设为该step的名。
+
+
+In [50]: make_pipeline(StandardScaler(),GaussianNB())
+Out[50]: Pipeline(steps=[('standardscaler', StandardScaler(copy=True, with_mean=
+True, with_std=True)), ('gaussiannb', GaussianNB(priors=None))])
+ 
+In [51]: p=make_pipeline(StandardScaler(),GaussianNB())
+ 
+In [52]: p.steps
+Out[52]:
+[('standardscaler', StandardScaler(copy=True, with_mean=True, with_std=True)),
+ ('gaussiannb', GaussianNB(priors=None))]
+
+
+数据预处理模块  preprocessing
+preprocessing.StandardScaler(copy=True, with_mean=True,with_std=True)：
+标准正态分布化的类
+
+
+
+
+
+3.cross_val_predict
+
+ cross_val_predict 与cross_val_score 很相像，不过不同于返回的是评测效果，cross_val_predict 
+返回的是estimator 的分类结果（或回归值），这个对于后期模型的改善很重要，可以通过该预测输出
+对比实际目标值，准确定位到预测出错的地方，为我们参数优化及问题排查十分的重要。
+  一样当cv 指定为int 类型时，默认使用KFold 或StratifiedKFold 进行数据集划分）
+  当然也可以通过指定cv而不用默认的）
+
+
+4.KFold
+n_splits : 默认3，最小为2；K折验证的K值
+
+shuffle : 默认False;shuffle会对数据产生随机搅动(洗牌)
+
+random_state :默认None，随机种子
+也仅仅是划分划分数据集，这个是无放回划分
+In [33]: from sklearn.model_selection import KFold
+
+In [34]: X = ['a','b','c','d']
+
+In [35]: kf = KFold(n_splits=2)
+
+In [36]: for train, test in kf.split(X):#属性spilt②split(X, y=None, groups=None)：将数据集划分成
+#训练集和测试集，返回索引生成器  get_n_splits(X=None, y=None, groups=None)：获取参数n_splits的值
+
+    ...:     print train, test
+    ...:     print np.array(X)[train], np.array(X)[test]
+    ...:     print '\n'
+    ...:     
+[2 3] [0 1]
+['c' 'd'] ['a' 'b']
+
+
+[0 1] [2 3]
+['a' 'b'] ['c' 'd']#可以看出来返回的是index  。kf = KFold(n_splits=2) 知道我们将数据集分成两部分，可
+以定义训练集测试集。n_splits表示分成几部分
+
+from sklearn.model_selection import KFold
+X = ['a','b','c','d']
+kf = KFold(n_splits=3)
+for train, test in kf.split(X):
+     print  (train, test)
+     print (np.array(X)[train], np.array(X)[test])
+     print ('\n')
+    
+    
+    
+    
+5.LeaveOneOut留一法
+In [37]: from sklearn.model_selection import LeaveOneOut
+
+In [38]: X = [1,2,3,4]
+
+In [39]: loo = LeaveOneOut()
+
+In [41]: for train, test in loo.split(X):
+    ...:     print train, test
+    ...:     
+[1 2 3] [0]
+[0 2 3] [1]
+[0 1 3] [2]
+[0 1 2] [3]
+
+
+#使用KFold实现LeaveOneOtut
+In [42]: kf = KFold(n_splits=len(X))
+
+In [43]: for train, test in kf.split(X):
+    ...:     print train, test
+    ...:     
+[1 2 3] [0]
+[0 2 3] [1]
+[0 1 3] [2]
+[0 1 2] [3]
+#一样是index ，n_splits=len(X)分成四部分，选一个剩余三个预测弄它
+
+6.LeavePOut
+In [44]: from sklearn.model_selection import LeavePOut
+
+In [45]: X = np.ones(4)
+
+In [46]: lpo = LeavePOut(p=2)
+
+In [47]: for train, test in lpo.split(X):
+    ...:     print train, test
+    ...:     
+[2 3] [0 1]
+[1 3] [0 2]
+[1 2] [0 3]
+[0 3] [1 2]
+[0 2] [1 3]
+[0 1] [2 3]
+#分成四部
+
+7.ShuffleSplit（是有放回的抽样，只能说经过一个足够大的抽样次数后，保证测试集出现了完成的数据集的倍数。）
+
+from sklearn.model_selection import ShuffleSplit
+X=np.arange(4)
+ss=ShuffleSplit(n_splits=4,test_size=.25,random_state=0)#不加random_state=0系统时间不一样每次结果不一样
+for train_index,test_index in ss.split(X):
+    print(train_index,test_index)
+
+n_splits指迭代次数，因为有测试及训练集大小 所以是迭代次数   
+    
+    
+8.StratifiedKFold 
+这个就比较好玩了，通过指定分组，对测试集进行无放回抽样。
+
+In [52]: from sklearn.model_selection import StratifiedKFold
+
+In [53]: X = np.ones(10)
+
+In [54]: y = [0,0,0,0,1,1,1,1,1,1]
+
+In [55]: skf = StratifiedKFold(n_splits=3)#分成三部分
+
+In [56]: for train, test in skf.split(X,y):
+    ...:     print train, test
+    ...:     
+[2 3 6 7 8 9] [0 1 4 5]
+[0 1 3 4 5 8 9] [2 6 7]
+[0 1 2 4 5 6 7] [3 8 9]
+
+13.TimeSeriesSplit
+针对时间序列的处理，防止未来数据的使用，分割时是将数据进行从前到后切割（这个说法其实不太恰当，因为切割是延续性的。。）
+
+In [81]: from sklearn.model_selection import TimeSeriesSplit
+
+In [82]: X = np.array([[1,2],[3,4],[1,2],[3,4],[1,2],[3,4]])
+
+In [83]: tscv = TimeSeriesSplit(n_splits=3)
+
+In [84]: for train, test in tscv.split(X):
+    ...:     print train, test
+    ...:     
+[0 1 2] [3]
+[0 1 2 3] [4]
+[0 1 2 3 4] [5]
+'''
+#model.alpha_#查看寻找的参数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
