@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 25 14:15:43 2018
+
+@author: zh
+"""
+
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#数据整理
+import os
+
+path=(r"F:\项目\高德交通数据\trainMiji/")#r防止特殊字符报错
+csv=os.listdir(r'F:\项目\高德交通数据\trainMiji')#注意t 返回文件夹下所有文件名称列表os.path.join(path,filename)可输出完整路径
+list=[]#创建空列表
+for csv in csv:
+    list.append(pd.read_csv(open(path+csv)))#open（str）不会打开中午报错
+
+
+# os.chdir() 改变到当前路径
