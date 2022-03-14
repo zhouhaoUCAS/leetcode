@@ -5,7 +5,7 @@
 # 1.滑动窗口 2.hash
 
 
-class Solution:
+class Solution:  # 滑动窗口发
     def lengthOfLongestSubstring(self, s: str) -> int:
         result_set = set()
         result = 0
@@ -19,7 +19,7 @@ class Solution:
         return result
 
 
-class Solution:
+class Solution:  # hash实现的滑动窗口
     def lengthOfLongestSubstring(self, s: str) -> int:
         hash_dict = {}
         result = 0
